@@ -217,7 +217,10 @@ public class OsmTagMapper {
     props.setMixinProperties(
       new ExactMatchSpecifier(
         new Not(new Equals("highway", "cycleway")),
-        new Equals("footway", "sidewalk")
+        new Equals("footway", "sidewalk"),
+        // a sidewalk designated for bikes should not be penalized.
+        // An example is a short connection on an otherwise discontiguous bike street.
+        new Not(new Equals("bicycle", "designated"))
       ),
       ofBicycleSafety(2.5)
     );
