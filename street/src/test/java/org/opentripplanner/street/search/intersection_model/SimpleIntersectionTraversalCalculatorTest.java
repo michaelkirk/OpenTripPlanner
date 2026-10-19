@@ -112,6 +112,41 @@ public class SimpleIntersectionTraversalCalculatorTest {
   }
 
   @Test
+  public void testBicycleRoundabout() {
+    IntersectionVertex v1 = vertex("approach", new Coordinate(2.0, 2.0), false, false);
+    IntersectionVertex v2 = vertex("entry", new Coordinate(2.0, 1.0), false, false);
+    IntersectionVertex v3 = vertex("circle", new Coordinate(1.0, 1.0), false, false);
+    IntersectionVertex v4 = vertex("circle2", new Coordinate(0.0, 1.0), false, false);
+    IntersectionVertex v5 = vertex("exit", new Coordinate(1.0, 2.0), false, false);
+
+    StreetEdge approach = edge(v1, v2, 1.0, false);
+    StreetEdge circle = roundaboutEdge(v2, v3);
+    StreetEdge circle2 = roundaboutEdge(v3, v4);
+    StreetEdge exit = edge(v3, v5, 1.0, false);
+    // So entering isn't free flowing.
+    edge(v2, vertex("stub", new Coordinate(3.0, 1.0), false, false), 1.0, false);
+
+    // Entering and leaving bend left, so would cost a turn across traffic off a roundabout.
+    assertEquals(-90, calculateTurnAngle(approach, circle));
+    assertEquals(-90, calculateTurnAngle(circle, exit));
+    assertEquals(
+      0.5625,
+      calculator.computeTraversalDuration(v2, approach, circle, TraverseMode.BICYCLE, 40, 40),
+      0.01
+    );
+    assertEquals(
+      0,
+      calculator.computeTraversalDuration(v3, circle, circle2, TraverseMode.BICYCLE, 40, 40),
+      0.01
+    );
+    assertEquals(
+      0.5625,
+      calculator.computeTraversalDuration(v3, circle, exit, TraverseMode.BICYCLE, 40, 40),
+      0.01
+    );
+  }
+
+  @Test
   public void testBicycleTrafficLights() {
     // Graph with an intersection with traffic lights
     IntersectionVertex v1 = vertex("maple_1st", new Coordinate(2.0, 2.0), false, false);
@@ -487,6 +522,22 @@ public class SimpleIntersectionTraversalCalculatorTest {
       hasCrossingLight
     );
     return v;
+  }
+
+  private StreetEdge roundaboutEdge(StreetVertex vA, StreetVertex vB) {
+    LineString geom = GeometryUtils.getGeometryFactory().createLineString(new Coordinate[] {
+      vA.getCoordinate(),
+      vB.getCoordinate(),
+    });
+    return new StreetEdgeBuilder<>()
+      .withFromVertex(vA)
+      .withToVertex(vB)
+      .withGeometry(geom)
+      .withName(String.format("%s_%s", vA.getLabel(), vB.getLabel()))
+      .withMeterLength(1.0)
+      .withPermission(StreetTraversalPermission.ALL)
+      .withRoundabout(true)
+      .buildAndConnect();
   }
 
   /**

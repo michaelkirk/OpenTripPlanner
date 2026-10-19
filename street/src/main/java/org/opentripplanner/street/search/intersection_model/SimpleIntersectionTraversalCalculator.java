@@ -172,8 +172,8 @@ public class SimpleIntersectionTraversalCalculator
     StreetEdge to,
     float toSpeed
   ) {
-    var turnAngle = calculateTurnAngle(from, to);
-    final var baseDuration = computeNonDrivingTraversalDuration(from, to, toSpeed);
+    var turnAngle = cyclingTurnAngle(from, to);
+    final var baseDuration = computeNonDrivingTraversalDuration(turnAngle, toSpeed);
 
     if (v.hasCyclingTrafficLight()) {
       return baseDuration + getExpectedWalkingAndCyclingTrafficLightTimeSec();
@@ -184,6 +184,24 @@ public class SimpleIntersectionTraversalCalculator
     } else {
       return baseDuration;
     }
+  }
+
+  /**
+   * The turn angle a cyclist is charged for: riding around a roundabout is one manoeuvre, so turns
+   * within it are free, and entering or leaving it is a safe turn however its edges bend.
+   */
+  private int cyclingTurnAngle(StreetEdge from, StreetEdge to) {
+    int turnAngle = calculateTurnAngle(from, to);
+    if (from.isRoundabout() && to.isRoundabout()) {
+      return 0;
+    }
+    if (from.isRoundabout() || to.isRoundabout()) {
+      return switch (drivingDirection) {
+        case RIGHT -> Math.abs(turnAngle);
+        case LEFT -> -Math.abs(turnAngle);
+      };
+    }
+    return turnAngle;
   }
 
   private double computeWalkingTraversalDuration(

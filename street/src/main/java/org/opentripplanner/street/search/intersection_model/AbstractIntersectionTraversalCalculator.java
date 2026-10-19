@@ -39,10 +39,15 @@ public abstract class AbstractIntersectionTraversalCalculator
     StreetEdge to,
     float toSpeed
   ) {
-    int turnCost = Math.abs(calculateTurnAngle(from, to));
+    return computeNonDrivingTraversalDuration(calculateTurnAngle(from, to), toSpeed);
+  }
 
+  /**
+   * Computes the turn duration in seconds for a non-driving turn through {@code turnAngle}.
+   */
+  protected double computeNonDrivingTraversalDuration(int turnAngle, float toSpeed) {
     // NOTE: This makes the turn duration lower the faster you're going
-    return (this.nonDrivingTurnDurationFactor * turnCost) / toSpeed;
+    return (this.nonDrivingTurnDurationFactor * Math.abs(turnAngle)) / toSpeed;
   }
 
   /**
